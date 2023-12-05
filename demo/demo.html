@@ -3,11 +3,14 @@
   <head>
     <script src="../dist/h265player.js"></script>
     <style>
+      body {
+        background-color: black;
+      }
       .play-container {
         width: 800px;
         height: 600px;
         /* background-color: #000; */
-        margin: 20px 0 0 100px;
+        /*margin: 20px 0 0 100px;*/
         float: left;
       }
 
@@ -19,14 +22,9 @@
   </head>
 
   <body>
-    <div id="PlayerWrapper">
-      <h3>
-        H.264 Player <em class="demo1" id="Demo1">DEMO</em>
-      </h3>
+<!--    <div id="PlayerWrapper">-->
       <div class="play-container"></div>
-    </div>
-    <br clear="all" />
-    <br />
+<!--    </div>-->
     <script>
       (function(win, doc) {
         const Config = {
@@ -48,6 +46,8 @@
           },
         };
         let el = doc.querySelector('.play-container');
+        el.style.width = (window.innerWidth - 25) + "px"
+        el.style.height = (window.innerHeight - 25)+ "px"
         let player = new h265player(el, {
           sourceURL: Config.src,
           type: 'HLS',
@@ -55,7 +55,7 @@
           libPath: Config.libPath,
           playBackRate: 1,
           controlBar: true,
-          autoPlay: true,
+          autoPlay: false,
         });
         window.player = player;
         // player.destroy()

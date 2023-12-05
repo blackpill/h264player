@@ -63,7 +63,7 @@ class Player extends BaseClass {
   startIndex = 1;
   loadData = null;
   paused = true;
-  autoPlay = true;
+  autoPlay = false;
   duration = 0;
   tsNumber = 0;
   /**

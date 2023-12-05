@@ -41,8 +41,8 @@ module.exports = merge(baseWebpackConfig, {
 
   devServer: {
     // disableHostCheck: true,
-    host: "0.0.0.0"
-    // port: 80
+    host: "0.0.0.0",
+    port: 8888
   },
 
   plugins: [
