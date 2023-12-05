@@ -43,7 +43,7 @@ export default class FFmpegDecode {
       // console.log('videoCallback', pts, performance.now() - start);
     },
     'viiiiiiiii');
-    Module._openDecoder(codec, videoCallback, 1);
+    Module._openDecoder(codec, videoCallback, 0);
   }
   decodeData(pes, pts) {
     let fileSize = pes.length;

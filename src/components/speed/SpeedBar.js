@@ -43,7 +43,7 @@ class SpeedBar extends BaseComponent {
     title: 'speed',
     currentSpeed: 1.0,
     speedList: null,
-    currentSpeedName: '倍速',
+    currentSpeedName: 'speed',
     speedListHTML: ''
   }
   options = {}

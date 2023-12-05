@@ -21,8 +21,7 @@
   <body>
     <div id="PlayerWrapper">
       <h3>
-        H.265 Player <b>在线播放器Demo1</b
-        ><em class="demo1" id="Demo1">DEMO</em>
+        H.264 Player <em class="demo1" id="Demo1">DEMO</em>
       </h3>
       <div class="play-container"></div>
     </div>
@@ -44,7 +43,8 @@
             return this.buildPath + 'lib/';
           },
           get src() {
-            return this.basePath + '/data/video2/playlist.m3u8';
+            return "https://video.cgtn.com/news/2023-12-03/COP28-loss-and-damage-deal-both-huge-victory-and-huge-compromise-expert-1pbmJ5agoww/video/b7df83383831466880991c4293fb8ae1/145000-320x180.m3u8"
+            // return this.basePath + '/data/video2/video.m3u8';
           },
         };
         let el = doc.querySelector('.play-container');
