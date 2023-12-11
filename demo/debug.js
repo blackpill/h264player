@@ -12,8 +12,11 @@ const urlPrefix = location.href.slice(
   0,
   location.href.lastIndexOf(location.pathname)
 );
-const src1 = urlPrefix + "/data/video2/video.m3u8";
+// const src1 = urlPrefix + "/data/video2/video.m3u8";
 // const src1 =
+"https://video.cgtn.com/news/2023-12-03/COP28-loss-and-damage-deal-both-huge-victory-and-huge-compromise-expert-1pbmJ5agoww/video/b7df83383831466880991c4293fb8ae1/145000-320x180.m3u8"
+const src1 = "http://10.59.1.114/playlist.m3u8"
+
 // "https://play.mms.cainiao.com/DingPei/live_STREAM_MAIN_24581642850820.m3u8?aliyun_uuid=442991077098708992-0";
 
 let player = null;

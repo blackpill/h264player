@@ -130,7 +130,7 @@ class Player extends BaseClass {
       this.muted = options.muted;
     }
     if (this.options.codec == null) {
-      this.options.codec = 1;
+      this.options.codec = 0;
     }
   }
   setAlertError() {

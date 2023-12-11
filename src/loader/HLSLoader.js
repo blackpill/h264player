@@ -118,15 +118,39 @@ class HLSLoader extends BaseLoader {
     parser.push(source);
     parser.end();
     const manifest = parser.manifest;
-    // console.log("manifest", manifest);
-    const levelLen = manifest.playlists?.length;
-    if (levelLen) {
-      const level = manifest.playlists[levelLen - 1];
-      this.sourceURL = level.uri;
-      // console.log("levelUrl", this.sourceURL);
-      this.loadPlaylist(callback);
-      return;
+    const filteredPlaylists = manifest.playlists?.filter((playlist) => {
+      return playlist.attributes.CODECS.includes("avc")
+    })
+    if(filteredPlaylists) {
+      const maxBandwidthPlaylist = filteredPlaylists.reduce((acc, current) => {
+        if (acc.attributes.BANDWIDTH >= current.attributes.BANDWIDTH) {
+          return acc
+        } else {
+          return current
+        }
+      })
+      // const levelLen = filteredPlaylists?.length;
+      if (maxBandwidthPlaylist) {
+        // const level = filteredPlaylists[levelLen - 1];
+        // const selectedAudio = maxBandwidthPlaylist.attributes.AUDIO
+        // var audioPlaylist
+        // if (selectedAudio !== null) {
+        //   var audio
+        //   if (manifest.mediaGroups.AUDIO[selectedAudio]) {
+        //     audioPlaylist = manifest.mediaGroups.AUDIO[selectedAudio].Default.uri
+        //   }
+        // }
+        // if (audioPlaylist !== null) {
+        //   this.sourceURL = audioPlaylist;
+        //   this.loadPlaylist()
+        // }
+        this.sourceURL = maxBandwidthPlaylist.uri;
+        // console.log("levelUrl", this.sourceURL);
+        this.loadPlaylist(callback);
+        return;
+      }
     }
+
 
     const data = new M3U8Parser(source);
     if (!data.segments || !data.segments.length) {

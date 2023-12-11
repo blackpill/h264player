@@ -60,6 +60,7 @@ const src = "https://homfen.github.io/h265player/data/video2/video.m3u8";
 const libPath = "https://homfen.github.io/h265player/lib/";
 const player = new h265player(el, {
   sourceURL: src,
+  codec: 0,
   type: "HLS",
   libPath,
   isLive: false,
