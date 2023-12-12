@@ -3,7 +3,9 @@ import Element from '../toolkit/Element'
 
 class SideControlBar extends BaseComponent {
 
-    static componentList = ['speedBar', 'rateBar', 'volumeBar', 'fullPage', 'fullScreen']
+    // static componentList = ['speedBar', 'rateBar', 'volumeBar', 'fullPage', 'fullScreen']
+    static componentList = ['volumeBar']
+
 
     constructor(options = {}) {
         super(options)
