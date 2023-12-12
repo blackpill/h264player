@@ -19,7 +19,7 @@ class SegmentPool extends BasePool {
       data = new SegmentModel(data)
     }
     // the number begin in 1
-    data.no = this.length + 1
+    data.no = this.filter((seg) => seg.audioOnly === data.audioOnly).length + 1
     if (Utils.isObject(data)) {
       this.push(data)
     }

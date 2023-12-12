@@ -21,6 +21,7 @@ let timer = null;
 
 class HLSLoader extends BaseLoader {
   state = state.IDLE;
+  audioURL = ''
 
   maxBufferDuration = BUFFER.maxDuration;
   maxBufferSize = BUFFER.maxSize;
@@ -33,6 +34,9 @@ class HLSLoader extends BaseLoader {
   segmentPool = [
     /* new SegmentModel */
   ];
+  audioSegmentPool = [
+    /* new SegmentModel */
+  ]
 
   currentNo = null;
   maxRetryCount = BUFFER.maxRetryCount;
@@ -45,6 +49,7 @@ class HLSLoader extends BaseLoader {
     this.dataController = this.loaderController.dataController;
     this.httpWorker = options.httpWorker;
     this.setSegmentPool(new SegmentPool());
+    this.setAudioSegmentPool(new SegmentPool());
     this.liveRetry = 0;
     clearInterval(timer);
     timer = null;
@@ -53,6 +58,15 @@ class HLSLoader extends BaseLoader {
   loadPlaylist(callback) {
     if (this.isNotFree()) {
       this.logger.info("loadPlaylist", "not free.");
+      if (!this.player.options.isLive) {
+        setTimeout(() => {
+          this.loadPlaylist(callback);
+        }, 200);
+      }
+      return;
+    }
+    if (this.audioURL !== "" && this.audioSegmentPool.length === 0) {
+      this.logger.info("loadPlaylist", "Wait for fetching audio playlist.");
       if (!this.player.options.isLive) {
         setTimeout(() => {
           this.loadPlaylist(callback);
@@ -112,6 +126,215 @@ class HLSLoader extends BaseLoader {
       }
     };
   }
+  loadAudioPlaylist() {
+    if (this.isNotFree()) {
+      this.logger.info("loadAudioPlaylist", "not free.");
+      if (!this.player.options.isLive) {
+        setTimeout(() => {
+          this.loadAudioPlaylist();
+        }, 200);
+      }
+      return;
+    }
+    if (this.player.options.beforeLoad) {
+      this.player.options
+          .beforeLoad(this.sourceURL, this.options.sourceURL)
+          .then((url) => {
+            this.options.sourceURL = url;
+            this.state = state.LOADING;
+            this.httpWorker.postMessage({
+              type: "invoke",
+              fileType: "m3u8",
+              method: "get",
+              name: "playlist",
+              url
+            });
+          });
+    } else {
+      this.state = state.LOADING;
+      this.httpWorker.postMessage({
+        type: "invoke",
+        fileType: "m3u8",
+        method: "get",
+        name: "playlist",
+        url: this.audioURL
+      });
+    }
+    this.httpWorker.onmessage = (event) => {
+      this.state = state.IDLE;
+      const data = event.data;
+      const body = event.data.data;
+      if (!body) {
+        if (this.player.options.isLive) {
+          const content = "暂无直播";
+          this.events.emit(Events.PlayerAlert, content);
+        } else {
+          const content = `Get the ${data.fileType} file error. URL: ${data.url}`;
+          this.events.emit(Events.PlayerAlert, content);
+          this.events.emit(Events.LoaderError, content, data);
+          const errors = [
+            this.state,
+            "request playlist error.",
+            "data:",
+            data,
+            content
+          ];
+          this.events.emit(Events.PlayerThrowError, errors);
+        }
+        return;
+      }
+      if (data.name == "playlist") {
+        this.parseAudioPlaylist(body);
+      }
+    };
+  }
+  parseAudioPlaylist(source) {
+    const parser = new Parser();
+    parser.push(source);
+    parser.end();
+    const manifest = parser.manifest;
+    const filteredPlaylists = manifest.playlists?.filter((playlist) => {
+      return playlist.attributes.CODECS.includes("avc")
+    })
+    if(filteredPlaylists) {
+      const maxBandwidthPlaylist = filteredPlaylists.reduce((acc, current) => {
+        if (acc.attributes.BANDWIDTH >= current.attributes.BANDWIDTH) {
+          return acc
+        } else {
+          return current
+        }
+      })
+      // const levelLen = filteredPlaylists?.length;
+      if (maxBandwidthPlaylist) {
+        this.sourceURL = maxBandwidthPlaylist.uri;
+        // console.log("levelUrl", this.sourceURL);
+        this.loadAudioPlaylist()
+        return;
+      }
+    }
+
+
+    const data = new M3U8Parser(source);
+    if (!data.segments || !data.segments.length) {
+      this.events.emit(Events.LoaderError, data);
+      this.events.emit(Events.PlayerAlert, "Parse playlist file error.");
+      const errors = [this.state, "Parse playlist error.", "data:", data];
+      this.events.emit(Events.PlayerThrowError, errors);
+      return;
+    }
+    let segments = data.segments;
+    segments.forEach((item) => {
+      item.start = Utils.msec2sec(item.start);
+      item.end = Utils.msec2sec(item.end);
+      item.duration = Utils.msec2sec(item.duration);
+      item.audioOnly = true;
+    });
+    // 处理discontinuity的情况
+    if (this.player.options.isLive) {
+      if (this.segmentPool.length) {
+        const names = this.segmentPool.map((item) => item.name);
+        data.segments = data.segments.filter(
+            (item) => names.indexOf(item.name) === -1
+        );
+        if (data.segments.length) {
+          const last = this.segmentPool.getLast();
+          const lastNo = last.no;
+          const lastEnd = last.end;
+          data.segments.forEach((item, idx) => {
+            item.no = idx + lastNo + 1;
+            if (idx === 0) {
+              item.start = lastEnd;
+            } else {
+              item.start = data.segments[idx - 1].end;
+            }
+            item.end = item.start + item.duration;
+          });
+          // this.events.emit(Events.ControlBarPlay, this);
+          this.liveRetry = 0;
+        } else {
+          this.liveRetry++;
+        }
+      }
+      if (!timer) {
+        timer = setInterval(() => {
+          if (this.liveRetry < 15) {
+            if (
+                !this.isNotFree() &&
+                !this.player.seeking &&
+                !this.player.reseting
+            ) {
+              this.player.loaderController.loadPlaylist();
+            }
+          } else {
+            clearInterval(timer);
+            timer = null;
+            this.liveRetry = 0;
+          }
+        }, 1000);
+      }
+    } else if (manifest.discontinuityStarts.length) {
+      const starts = manifest.discontinuityStarts.filter(
+          (item, idx, arr) => !arr[idx - 1] || arr[idx - 1] != item - 1
+      );
+      const preds = starts.map((v, i) => {
+        let start = starts[i - 1];
+        if (i === 0) {
+          start = 0;
+        }
+        return segments.slice(start, v).reduce((a, b) => a + b.duration, 0);
+      });
+      preds.unshift(0);
+      for (let i = 0; i < preds.length; i++) {
+        preds[i] += preds[i - 1] || 0;
+      }
+      let idx = 0;
+      for (let i = 0; i < segments.length; i++) {
+        const segment = segments[i];
+        const start = starts[idx];
+        if (start == null) {
+          segment.pred = preds[preds.length - 1];
+        } else if (i < start) {
+          segment.pred = preds[idx];
+        } else if (i === start) {
+          idx += 1;
+          segment.pred = preds[idx];
+        }
+      }
+    }
+    // console.log("segments", this.options.sourceURL, segments);
+    // const listUrl = this.options.sourceURL;
+    // const prefix = listUrl.slice(0, listUrl.lastIndexOf("/") + 1);
+    // const list = segments.slice();
+    // const download = () => {
+    // if (!list.length) return;
+    // const segment = list.shift();
+    // const url = prefix + segment.file;
+    // window.open(url, "_blank");
+    // setTimeout(download, 1000);
+    // };
+    // download();
+    this.audioSegmentPool.addAll(data.segments);
+    if (data.segments.length) {
+      if (this.player.options.isLive) {
+        const imagePlayer = this.player.imagePlayer;
+        const imageData = imagePlayer.imageData;
+        if (
+            imagePlayer.status !== "play" &&
+            imagePlayer.status !== "ready" &&
+            imageData.offset != null
+        ) {
+          const last = this.segmentPool.getLast();
+          this.logger.info("imagePlayer end replay", this.player.currentTime);
+          this.player.seek(last.start * 1000);
+          setTimeout(() => {
+            if (this.player.paused) {
+              this.player.play();
+            }
+          }, 1000);
+        }
+      }
+    }
+  }
 
   parsePlaylist(source, callback) {
     const parser = new Parser();
@@ -131,19 +354,17 @@ class HLSLoader extends BaseLoader {
       })
       // const levelLen = filteredPlaylists?.length;
       if (maxBandwidthPlaylist) {
-        // const level = filteredPlaylists[levelLen - 1];
-        // const selectedAudio = maxBandwidthPlaylist.attributes.AUDIO
-        // var audioPlaylist
-        // if (selectedAudio !== null) {
-        //   var audio
-        //   if (manifest.mediaGroups.AUDIO[selectedAudio]) {
-        //     audioPlaylist = manifest.mediaGroups.AUDIO[selectedAudio].Default.uri
-        //   }
-        // }
-        // if (audioPlaylist !== null) {
-        //   this.sourceURL = audioPlaylist;
-        //   this.loadPlaylist()
-        // }
+        const selectedAudio = maxBandwidthPlaylist.attributes.AUDIO
+        var audioPlaylist
+        if (selectedAudio) {
+          if (manifest.mediaGroups.AUDIO[selectedAudio]) {
+            audioPlaylist = manifest.mediaGroups.AUDIO[selectedAudio].Default.uri
+          }
+        }
+        if (audioPlaylist) {
+          this.audioURL = audioPlaylist;
+          this.loadAudioPlaylist()
+        }
         this.sourceURL = maxBandwidthPlaylist.uri;
         // console.log("levelUrl", this.sourceURL);
         this.loadPlaylist(callback);
@@ -253,7 +474,7 @@ class HLSLoader extends BaseLoader {
     this.setSourceData(Object.freeze(data));
     this.segmentPool.addAll(data.segments);
     if (data.segments.length) {
-      callback.call(this, data);
+      if (callback !== null) callback.call(this, data);
       if (this.player.options.isLive) {
         const imagePlayer = this.player.imagePlayer;
         const imageData = imagePlayer.imageData;
@@ -286,20 +507,26 @@ class HLSLoader extends BaseLoader {
   setSegmentPool(segmentPool) {
     this.segmentPool = segmentPool;
   }
-
+  setAudioSegmentPool(segmentPool) {
+    this.audioSegmentPool = segmentPool;
+  }
   getSegmentPool() {
     return this.segmentPool;
+  }
+
+  getAudioSegmentPool() {
+    return this.audioSegmentPool;
   }
 
   isNotFree(notice = "") {
     notice = "[" + notice + "]loader is not free. please wait.";
     if (this.state !== state.IDLE && this.state !== state.DONE) {
-      this.logger.warn(
-        "isNotFree",
-        "check status for loader",
-        "notice:",
-        notice
-      );
+      // this.logger.warn(
+      //   "isNotFree",
+      //   "check status for loader",
+      //   "notice:",
+      //   notice
+      // );
       return true;
     }
     return false;
@@ -327,17 +554,17 @@ class HLSLoader extends BaseLoader {
     const bufferDuration = this.dataController.getLoadDataBufferPool()
       .bufferDuration;
     const maxBufferDuration = this.maxBufferDuration * this.player.playbackRate;
-    if (bufferDuration > maxBufferDuration) {
-      this.logger.info(
-        "checkLoadCondition",
-        "stop load next segment.",
-        "bufferDuration:",
-        bufferDuration,
-        "maxBufferDuration:",
-        this.maxBufferDuration
-      );
-      return false;
-    }
+    // if (bufferDuration > maxBufferDuration) {
+    //   this.logger.info(
+    //     "checkLoadCondition",
+    //     "stop load next segment.",
+    //     "bufferDuration:",
+    //     bufferDuration,
+    //     "maxBufferDuration:",
+    //     this.maxBufferDuration
+    //   );
+    //   return false;
+    // }
     return true;
   }
 
@@ -354,14 +581,14 @@ class HLSLoader extends BaseLoader {
 
     // only single load process
     if (this.isNotFree() && type !== "seek" && type !== "start") {
-      this.logger.warn(
-        "loadFile",
-        "is loading",
-        "segment:",
-        segment,
-        "type:",
-        type
-      );
+      // this.logger.warn(
+      //   "loadFile",
+      //   "is loading",
+      //   "segment:",
+      //   segment,
+      //   "type:",
+      //   type
+      // );
       setTimeout(() => {
         this.loadFile(segment, type, time);
       }, 200);

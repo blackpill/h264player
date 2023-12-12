@@ -15,11 +15,20 @@ class LoadData extends BaseClass {
   bufferPool = [
     /* new BufferModel */
   ];
+  audioBufferPool = [
+    /* new BufferModel */
+  ];
   sourceData = {};
   options = {};
   segmentPool = [
     /* new SegmentModel */
   ];
+  seperateAudio = false;
+  audioSegmentPool = [
+    /* new SegmentModel */
+  ];
+  segmentIdFetched= [];
+  audioSegmentIdFetched= [];
 
   readBufferNo = null;
   startLoadTime = null;
@@ -35,7 +44,10 @@ class LoadData extends BaseClass {
 
   init() {
     this.setBufferPool(new BufferPool());
+    this.setAudioBufferPool(new BufferPool());
+
     this.events.on(Events.LoadDataReadBufferByNo, (no, callback) => {
+      this.readAudioBufferByNo(no, callback, true);
       this.readBufferByNo(no, callback, true);
     });
     this.events.on(Events.LoadDataReadBuffer, (time, callback) => {
@@ -56,8 +68,14 @@ class LoadData extends BaseClass {
           this.removeBufferByNo(buffer.no);
           return;
         }
-        if (time === this.startLoadTime) {
-          this.events.emit(Events.LoadDataFirstLoaded, buffer, time);
+        if (this.seperateAudio) {
+          if (segment.audioOnly) {
+            this.events.emit(Events.LoadDataFirstLoaded, buffer, time);
+          }
+        }else {
+          if (time === this.startLoadTime) {
+            this.events.emit(Events.LoadDataFirstLoaded, buffer, time);
+          }
         }
       } else if (sourceType === "MP4") {
         const duration = this.options.player.options.duration;
@@ -92,19 +110,39 @@ class LoadData extends BaseClass {
   readBuffer(time, callback) {
     const segment = this.getSegmentByTime(time);
     if (segment) {
+      this.readAudioBufferByNo(segment.no, callback);
       this.readBufferByNo(segment.no, callback);
     }
   }
 
   segmentLoaded(segment, buffer) {
     if (buffer) {
-      this.addBufferPool(buffer);
+      if (segment.audioOnly) {
+        this.addAudioBufferPool(buffer);
+        if (segment.no === this.options.player.currentIndex) {
+          this.readAudioBufferByNo(segment.no);
+        }
+      }else {
+        this.addBufferPool(buffer);
+        if (segment.no === this.options.player.currentIndex) {
+          this.readBufferByNo(segment.no);
+        }
+      }
     }
-    if (segment.no === this.options.player.currentIndex) {
-      this.readBufferByNo(segment.no);
-    }
+
     const lastNo = this.segmentPool.getLast().no;
-    if (segment.no < lastNo) {
+    // push no to loaded
+    if (!segment.audioOnly) {
+      this.segmentIdFetched.push(segment.no)
+    }
+    // If has audio segments, try reading audio segment first, then next video segment
+    if (!segment.audioOnly && this.audioSegmentPool.length > 0) {
+      for(let id of this.segmentIdFetched) {
+        if(this.audioSegmentIdFetched.indexOf(id) === -1){
+          this.loadAudioSegmentByNo(id);
+        }
+      }
+    }else if (segment.no < lastNo) {
       this.loadSegmentByNo(segment.no + 1);
     }
   }
@@ -155,6 +193,7 @@ class LoadData extends BaseClass {
       start: segment.start,
       end: segment.end,
       no: segment.no,
+      audioOnly: segment.audioOnly,
       duration: segment.end - segment.start,
       // blob: data.blob,
       arrayBuffer: data.arrayBuffer
@@ -173,6 +212,20 @@ class LoadData extends BaseClass {
       return;
     }
     const buffer = this.bufferPool.getByKeyValue("no", no)[0];
+    if (!buffer) {
+      // console.log("loadSegmentByNo", no);
+      this.events.emit(Events.LoaderLoadFile, segment, "play");
+    }
+  }
+
+  loadAudioSegmentByNo(no) {
+    const idx = no - 1;
+    const segment = this.audioSegmentPool.get(idx);
+    if (!segment) {
+      return;
+    }
+    this.audioSegmentIdFetched.push(no)
+    const buffer = this.audioBufferPool.getByKeyValue("no", no)[0];
     if (!buffer) {
       // console.log("loadSegmentByNo", no);
       this.events.emit(Events.LoaderLoadFile, segment, "play");
@@ -205,6 +258,31 @@ class LoadData extends BaseClass {
   }
 
   /**
+   * get buffer from bufferPool and the blob will convert to arrayBuffer
+   * @param {number} time
+   * @param {Function} callback [optional]
+   */
+  readAudioBufferByNo(no, callback, fromStream) {
+    if (!this.isValidSegmentNo(no)) {
+      this.logger.error(
+          "readAudioBufferByNo",
+          "check buffer no",
+          "is not valid no",
+          no
+      );
+      return;
+    }
+    this.readBufferNo = no;
+    callback =
+        callback ||
+        function (buffer) {
+          this.events.emit(Events.LoadDataRead, buffer);
+        };
+    // console.log("readBufferByNo", no);
+    this.getAudioBlobByNo(no, callback, fromStream);
+  }
+
+  /**
    * get segment from segment by time
    * @param {number} time
    */
@@ -228,21 +306,68 @@ class LoadData extends BaseClass {
     buffer = this.bufferPool.getByKeyValue("no", no)[0];
 
     if (typeof callback == "function") {
-      callback.call(this, buffer);
       if (buffer) {
-        this.removeBufferByNo(buffer.no);
-      } else {
+        callback.call(this, buffer);
+        // this.removeBufferByNo(buffer.no);
+      }else{
         this.logger.error("getBlobByNo", "buffer null", "no:", no);
         if (fromStream) {
           // this.player.streamController.currentIndex = no - 1;
-          this.loadSegmentByNo(no);
+          // this.loadSegmentByNo(no);
         }
       }
     }
     this.isBufferReading = false;
     return buffer;
   }
+  getAudioBlobByNo(no, callback, fromStream) {
+    if (isNaN(no)) {
+      this.logger.error("getBlobByNo", "isNaN", "no:", no);
+      return;
+    }
+    if (!this.keepCache && this.isBufferReading) {
+      this.logger.warn("getBlobByNo", "isBufferReading", "no:", no);
+      return;
+    }
+    let audioBuffer;
+    this.isBufferReading = true;
+    audioBuffer = this.audioBufferPool.getByKeyValue("no", no)[0];
 
+    if (typeof callback == "function") {
+      if (audioBuffer) {
+        callback.call(this, audioBuffer);
+        // this.removeAudioBufferByNo(audioBuffer.no);
+      }else{
+        this.logger.error("getBlobByNo", "buffer null", "no:", no);
+        if (fromStream) {
+          // this.player.streamController.currentIndex = no - 1;
+          // this.loadAudioSegmentByNo(no);
+        }
+      }
+    }
+    this.isBufferReading = false;
+    return audioBuffer;
+  }
+
+  addAudioBufferPool(buffer) {
+    // console.log("addBufferPool", buffer.no);
+    if (this.audioBufferPool.length) {
+      if (this.audioBufferPool[0].no === buffer.no + 1) {
+        this.audioBufferPool.unshift(buffer);
+        return true;
+      }
+      const last = this.audioBufferPool.getLast();
+      if (buffer.no - last.no === 1) {
+        this.audioBufferPool.push(buffer);
+        return true;
+      }
+      if (this.audioBufferPool.indexOfByKey("no", buffer.no) > -1) {
+        return true;
+      }
+      this.audioBufferPool.splice(0, this.audioBufferPool.length);
+    }
+    this.audioBufferPool.push(buffer);
+  }
   addBufferPool(buffer) {
     // console.log("addBufferPool", buffer.no);
     if (this.bufferPool.length) {
@@ -270,7 +395,13 @@ class LoadData extends BaseClass {
       this.bufferPool.splice(0, idx + 1);
     }
   }
-
+  removeAudioBufferPool(idx) {
+    // let buffer = this.bufferPool.get(idx)
+    // remove all segment before the time
+    if (!this.keepCache) {
+      this.audioBufferPool.splice(0, idx + 1);
+    }
+  }
   removeBufferByNo(no) {
     // console.log("removeBufferPool", no);
     const idx = this.bufferPool.indexOfByKey("no", no);
@@ -291,18 +422,45 @@ class LoadData extends BaseClass {
     }
     return true;
   }
+  removeAudioBufferByNo(no) {
+    // console.log("removeBufferPool", no);
+    const idx = this.audioBufferPool.indexOfByKey("no", no);
+    if (idx <= -1) {
+      return;
+    }
+    this.removeAudioBufferPool(idx);
+    const segment = this.getAudioSegmentByNo(no);
+    segment.loaded = false;
+
+    if (this.audioBufferPool.length) {
+      // while buffer pool is full to read, load next one after last
+      if (this.audioBufferPool.getLast().no < this.audioSegmentPool.getLast().no) {
+        this.loadAudioSegmentByNo(this.audioBufferPool.getLast().no + 1);
+      }
+    } else if (no < this.audioSegmentPool.getLast().no) {
+      this.loadAudioSegmentByNo(no + 1);
+    }
+    return true;
+  }
 
   clear() {
     this.sourceData = {};
     this.readBufferNo = null;
     this.currentSeekTime = null;
-    this.bufferPool.length = 0;
+    this.bufferPool.length = 0
+    this.audioBufferPool.length = 0;
     this.segmentPool.length = 0;
+    this.audioSegmentPool.length = 0;
   }
 
   getSegmentByNo(no) {
     // segmentPool is readonly data
     return this.segmentPool.get(no - 1);
+  }
+
+  getAudioSegmentByNo(no) {
+    // segmentPool is readonly data
+    return this.audioSegmentPool.get(no - 1);
   }
 
   getSegment(time) {
@@ -320,13 +478,22 @@ class LoadData extends BaseClass {
   setBufferPool(bufferPool) {
     this.bufferPool = bufferPool;
   }
-
+  setAudioBufferPool(bufferPool) {
+    this.audioBufferPool = bufferPool;
+  }
   getBufferPool() {
     return this.bufferPool;
   }
 
   setSegmentPool(segmentPool) {
     this.segmentPool = segmentPool;
+  }
+
+  setAudioSegmentPool(audioSegmentPool) {
+    if (audioSegmentPool.length > 0) {
+      this.seperateAudio = true
+    }
+    this.audioSegmentPool = audioSegmentPool;
   }
 
   getSegmentPool() {

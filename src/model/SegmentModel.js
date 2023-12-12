@@ -8,6 +8,7 @@ import BaseModel from '../base/BaseModel.js'
 class SegmentModel extends BaseModel {
 
   no = 0
+  audioOnly = false
   name = null
   duration = 0
   file = null

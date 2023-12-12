@@ -36,6 +36,10 @@ export class DataController extends BaseController {
     this.loadData.setSegmentPool(segmentPool);
   }
 
+  setLoadDataAudioSegmentPool(segmentPool) {
+    this.loadData.setAudioSegmentPool(segmentPool);
+  }
+
   startLoad(startTime) {
     const type = this.options.player.options.type;
     if (type === 'HLS') {

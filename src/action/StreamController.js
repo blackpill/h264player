@@ -234,7 +234,7 @@ export default class StreamController extends BaseClass {
     }
     //no audio data
     if (!dataArray.length) {
-      this.audioPlayer.send({});
+      // this.audioPlayer.send({});
     }
     this.logger.info(
       "StreamController",
@@ -244,16 +244,18 @@ export default class StreamController extends BaseClass {
       dataArray.length
     );
     dataArray.forEach((data) => {
-      const segment = this.loadData.segmentPool.find((item) => item.no === no);
-      if (segment.startAudioPts == null) {
-        segment.startAudioPts = data.PTS - segment.start * 1000;
-      }
-      data.PTS = data.PTS - segment.startAudioPts;
-      if (data.PTS >= this.player.currentTime || data.audioEnd) {
-        if (!this.player.receiveAACTime && this.player.seeking) {
-          this.player.receiveAACTime = Date.now();
+      if (data.data_byte && data.data_byte.length > 0) {
+        const segment = this.loadData.segmentPool.find((item) => item.no === no);
+        if (segment.startAudioPts == null) {
+          segment.startAudioPts = data.PTS - segment.start * 1000;
         }
-        this.audioPlayer.send(data);
+        data.PTS = data.PTS - segment.startAudioPts;
+        if (data.PTS >= this.player.currentTime || data.audioEnd) {
+          if (!this.player.receiveAACTime && this.player.seeking) {
+            this.player.receiveAACTime = Date.now();
+          }
+          this.audioPlayer.send(data);
+        }
       }
     });
     /*
@@ -298,8 +300,15 @@ export default class StreamController extends BaseClass {
       // console.error("onRead reseting");
       return;
     }
-
-    if (
+    if (data.audioOnly) {
+      let msPerFrame = this.imagePlayer.imageData.fps ? 1000 / this.imagePlayer.imageData.fps : 33
+      let audioData = {
+        PTS: data.start * 1000 + msPerFrame,
+        data_byte: data.arrayBuffer,
+        audioEnd: false
+      }
+      this.audioPlayer.send(audioData)
+    }else if (
       data &&
       data.arrayBuffer &&
       (data.no === this.currentIndex ||

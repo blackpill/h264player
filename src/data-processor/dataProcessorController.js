@@ -135,10 +135,11 @@ export default class DataProcessorController extends BaseClass {
     }
     this.logger.info("onStartDemux", "postMessage to demux", data.no);
 
-    const segment = this.player.loadData.segmentPool.find(
+    const segmentPool = data.audioOnly ? this.player.loadData.audioSegmentPool : this.player.loadData.segmentPool
+    const segment = segmentPool.find(
       (item) => item.no === data.no
     );
-    if (segment.decoded && this.keepCache) {
+    if (segment.decoded && this.keepCache && !segment.audioOnly) {
       this.events.emit(Events.ImagePlayerReady);
       this.events.emit(Events.PlayerSeekEnd);
       const imagePlayer = this.player.imagePlayer;
@@ -158,7 +159,11 @@ export default class DataProcessorController extends BaseClass {
         sourceType: this.player.options.type,
         isLast: this.isLast
       });
-      this.player.loadData.loadSegmentByNo(data.no + 1);
+      // if (data.audioOnly) {
+      //   this.player.loadData.loadAudioSegmentByNo(data.no + 1);
+      // }else {
+      //   this.player.loadData.loadSegmentByNo(data.no + 1);
+      // }
     } else {
       this.logger.error("onStartDemux", "data is null", "data:", data);
     }

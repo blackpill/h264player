@@ -7,6 +7,7 @@
 import BaseModel from '../base/BaseModel.js';
 class BufferModel extends BaseModel {
   no = 0;
+  audioOnly = false;
   start = 0;
   end = 0;
   blob = null;
