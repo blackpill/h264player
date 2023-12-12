@@ -96,7 +96,7 @@ class WaitingBar extends BaseComponent {
   `;
   data = {
     title: "waiting",
-    speed: "",
+    speed: "Loading...",
     status: "",
     display: "show"
   };

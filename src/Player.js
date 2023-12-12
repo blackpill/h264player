@@ -250,6 +250,7 @@ class Player extends BaseClass {
     this.setAudioPlayer();
     this.setAction();
     this.setStreamController();
+    this.controlBarController.waitingBar.showWaiting();
 
     if (this.preload) {
       this.run();
