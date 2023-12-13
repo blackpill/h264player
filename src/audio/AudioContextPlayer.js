@@ -229,7 +229,7 @@ export default class AudioContextPlayer extends BaseClass {
     };
   }
   get volume() {
-    return this.gainNode.gain.value;
+    return this.gainNode ? this.gainNode.gain.value : this.defaultVolume;
   }
   set volume(value) {
     if (this.gainNode) {
