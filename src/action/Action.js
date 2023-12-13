@@ -111,7 +111,7 @@ export default class Action extends BaseClass {
       this.events.once(Events.AudioPlayerPlaySuccess, () => {
         imagePlayer.render(vOffset);
       });
-      if (this.audioPlayer.status !== "playing") {
+      if (this.audioPlayer.status !== "playing" && this.audioPlayer.status !== "end") {
         audioPlayer.playbackRate = playbackRate;
         audioPlayer.play();
       }
@@ -128,7 +128,7 @@ export default class Action extends BaseClass {
       if (Math.abs(this.audioPlayer.currentTime - time) > 200) {
         this.audioPlayer.currentTime = time;
       }
-      if (this.audioPlayer.status !== "playing") {
+      if (this.audioPlayer.status !== "playing" && this.audioPlayer.status !== "end") {
         this.audioPlayer.playbackRate = playbackRate;
         this.audioPlayer.play();
       }
