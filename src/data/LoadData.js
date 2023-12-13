@@ -69,7 +69,7 @@ class LoadData extends BaseClass {
           return;
         }
         if (this.seperateAudio) {
-          if (segment.audioOnly) {
+          if (buffer.start === this.startLoadTime && segment.audioOnly) {
             this.events.emit(Events.LoadDataFirstLoaded, buffer, time);
           }
         }else {
@@ -119,9 +119,7 @@ class LoadData extends BaseClass {
     if (buffer) {
       if (segment.audioOnly) {
         this.addAudioBufferPool(buffer);
-        if (segment.no === this.options.player.currentIndex) {
-          this.readAudioBufferByNo(segment.no);
-        }
+        this.readAudioBufferByNo(segment.no);
       }else {
         this.addBufferPool(buffer);
         if (segment.no === this.options.player.currentIndex) {
@@ -341,7 +339,7 @@ class LoadData extends BaseClass {
         this.logger.error("getBlobByNo", "buffer null", "no:", no);
         if (fromStream) {
           // this.player.streamController.currentIndex = no - 1;
-          // this.loadAudioSegmentByNo(no);
+          this.loadAudioSegmentByNo(no);
         }
       }
     }

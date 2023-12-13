@@ -20,7 +20,8 @@ export default class StreamController extends BaseClass {
   hasInit = false;
   loadDataStatus = "loading";
   duration = 0;
-  tsNumber = 0;
+  tsNumber = 0
+  audioSegmentIdReceived= []; //avoid resend segment to audioPlayer
   constructor(options) {
     super(options);
     this.loadData = options.loadData;
@@ -130,6 +131,7 @@ export default class StreamController extends BaseClass {
     this.dataReady = { audioReady: false, imageReady: false };
     this.currentIndex = null;
     this.loadDataStatus = "loading";
+    this.audioSegmentIdReceived = []; //avoid resend segment to audioPlayer
   }
   startLoad(index) {
     this.logger.info("startLoad", "index:", index);
@@ -300,14 +302,22 @@ export default class StreamController extends BaseClass {
       // console.error("onRead reseting");
       return;
     }
-    if (data.audioOnly) {
-      let msPerFrame = this.imagePlayer.imageData.fps ? 1000 / this.imagePlayer.imageData.fps : 33
+    if (data.audioOnly && this.audioSegmentIdReceived.indexOf(data.no) === -1) {
+      // let msPerFrame = this.imagePlayer.imageData.fps ? 1000 / this.imagePlayer.imageData.fps : 33
+      let msPerFrame = 33
       let audioData = {
         PTS: data.start * 1000 + msPerFrame,
         data_byte: data.arrayBuffer,
         audioEnd: false
       }
       this.audioPlayer.send(audioData)
+      this.audioSegmentIdReceived.push(data.no); //avoid resend segment to audioPlayer
+      if (Math.abs(data.end - this.duration) <= 0.1) {
+        this.audioPlayer.send({
+          PTS: data.end * 1000,
+          audioEnd:true
+        })
+      }
     }else if (
       data &&
       data.arrayBuffer &&
