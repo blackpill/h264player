@@ -104,7 +104,7 @@ export default class StreamController extends BaseClass {
     });
     this.events.on(Events.DecodeFlushEnd, (data) => {
       this.logger.info("flushend>>>>>>>>>>>>>>>", data);
-      this.imagePlayer.maxPTS = data;
+      // this.imagePlayer.maxPTS = data;
     });
   }
   checkDataReady(type) {
@@ -308,16 +308,17 @@ export default class StreamController extends BaseClass {
       let audioData = {
         PTS: data.start * 1000 + msPerFrame,
         data_byte: data.arrayBuffer,
+        duration: data.duration * 1000, //only seperate audio has this property
         audioEnd: false
       }
       this.audioPlayer.send(audioData)
       this.audioSegmentIdReceived.push(data.no); //avoid resend segment to audioPlayer
-      if (Math.abs(data.end - this.duration) <= 0.1) {
-        this.audioPlayer.send({
-          PTS: data.end * 1000,
-          audioEnd:true
-        })
-      }
+      // if (Math.abs(data.end - this.duration) <= 0.1) {
+      //   this.audioPlayer.send({
+      //     PTS: data.end * 1000,
+      //     audioEnd:true
+      //   })
+      // }
     }else if (
       data &&
       data.arrayBuffer &&

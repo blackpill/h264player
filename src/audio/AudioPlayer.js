@@ -58,8 +58,8 @@ export default class AudioPlayer extends BaseClass {
       this.ready = false;
       const nearEnd =
         Math.trunc(
-          this.options.player.duration - this.options.player.currentTime / 1000
-        ) < 2;
+          this.options.player.duration * 1000 - this.options.player.currentTime
+        ) < 100;
       if (this.end || nearEnd) {
         if (!this.useJMuxer) {
           this.player.destroy();
@@ -217,17 +217,21 @@ export default class AudioPlayer extends BaseClass {
     }
 
     if (data.PTS > this.currentPTS) {
-      if (!this.lastData) {
+      if (data.duration) { //for seperate audio
+        this.feed(data);
+      }else {
+        if (!this.lastData) {
+          this.lastData = data;
+          return;
+        } else {
+          //get the audio packekt duration
+          this.lastData.duration = data.PTS - this.lastData.PTS;
+        }
+        this.feed(this.lastData);
+        //record the previous audio duration
+        data.duration = this.lastData.duration;
         this.lastData = data;
-        return;
-      } else {
-        //get the audio packekt duration
-        this.lastData.duration = data.PTS - this.lastData.PTS;
       }
-      this.feed(this.lastData);
-      //record the previous audio duration
-      data.duration = this.lastData.duration;
-      this.lastData = data;
     }
   }
   feed(data) {
