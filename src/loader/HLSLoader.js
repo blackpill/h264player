@@ -358,7 +358,8 @@ class HLSLoader extends BaseLoader {
         var audioPlaylist
         if (selectedAudio) {
           if (manifest.mediaGroups.AUDIO[selectedAudio]) {
-            audioPlaylist = manifest.mediaGroups.AUDIO[selectedAudio].Default.uri
+            let key = Object.keys(manifest.mediaGroups.AUDIO[selectedAudio])[0]
+            audioPlaylist = manifest.mediaGroups.AUDIO[selectedAudio][key].uri
           }
         }
         if (audioPlaylist) {
