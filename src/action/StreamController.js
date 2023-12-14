@@ -302,7 +302,8 @@ export default class StreamController extends BaseClass {
       // console.error("onRead reseting");
       return;
     }
-    if (data.audioOnly && this.audioSegmentIdReceived.indexOf(data.no) === -1) {
+    let currentNo = Math.max.apply(Math, this.audioSegmentIdReceived)
+    if (data.audioOnly && (this.audioSegmentIdReceived.length === 0 || data.no === currentNo + 1)) {
       // let msPerFrame = this.imagePlayer.imageData.fps ? 1000 / this.imagePlayer.imageData.fps : 33
       let msPerFrame = 33
       let audioData = {
@@ -311,6 +312,7 @@ export default class StreamController extends BaseClass {
         duration: data.duration * 1000, //only seperate audio has this property
         audioEnd: false
       }
+      this.logger.warn("onRead", "send audio data", data.no);
       this.audioPlayer.send(audioData)
       this.audioSegmentIdReceived.push(data.no); //avoid resend segment to audioPlayer
       // if (Math.abs(data.end - this.duration) <= 0.1) {
