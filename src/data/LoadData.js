@@ -47,8 +47,8 @@ class LoadData extends BaseClass {
     this.setAudioBufferPool(new BufferPool());
 
     this.events.on(Events.LoadDataReadBufferByNo, (no, callback) => {
-      if (this.seperateAudio) this.readAudioBufferByNo(no, callback, true);
       this.readBufferByNo(no, callback, true);
+      if (this.seperateAudio) this.readAudioBufferByNo(no, callback, true);
     });
     this.events.on(Events.LoadDataReadBuffer, (time, callback) => {
       this.readBuffer(time, callback);
