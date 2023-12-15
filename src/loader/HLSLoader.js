@@ -194,7 +194,11 @@ class HLSLoader extends BaseLoader {
     parser.end();
     const manifest = parser.manifest;
     const filteredPlaylists = manifest.playlists?.filter((playlist) => {
-      return playlist.attributes.CODECS.includes("avc")
+      if (playlist.attributes.CODECS) {
+        return playlist.attributes.CODECS.includes("avc")
+      }else{
+        return true
+      }
     })
     if(filteredPlaylists) {
       const maxBandwidthPlaylist = filteredPlaylists.reduce((acc, current) => {
@@ -342,7 +346,11 @@ class HLSLoader extends BaseLoader {
     parser.end();
     const manifest = parser.manifest;
     const filteredPlaylists = manifest.playlists?.filter((playlist) => {
-      return playlist.attributes.CODECS.includes("avc")
+      if (playlist.attributes.CODECS) {
+        return playlist.attributes.CODECS.includes("avc")
+      }else{
+        return true
+      }
     })
     if(filteredPlaylists) {
       const maxBandwidthPlaylist = filteredPlaylists.reduce((acc, current) => {

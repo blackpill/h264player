@@ -121,6 +121,7 @@ gp-button {
   display: block;
 }
 .goldplay__control--sidebar {
+  margin-top: 20px;
   padding-top: 4px;
   float:right;
   display: block;
@@ -171,10 +172,12 @@ gp-button {
 }
 .goldplay__control--button-block {
   display: inline-block;
+  margin-top: 10px;
+  vertical-align: middle;
 }
 .goldplay__control--play {
   display: none;
-  width: 20px;
+  width: 40px;
 }
 .goldplay__control--replay {
   display: none;
@@ -182,7 +185,7 @@ gp-button {
 }
 .goldplay__control--pause {
   display: none;
-  width: 20px;
+  width: 40px;
 }
 .goldplay__control--pause-loading {
  margin: -5px 0 0 -5px;
@@ -249,9 +252,11 @@ gp-button {
   transition: transform .15s ease-in-out,-webkit-transform .15s ease-in-out;
 }
 .goldplay__control--timer {
-  font-size: .9em;
+  height: 15px;
+  vertical-align: middle;
+  font-size: 20px;
   color: var(--timerColor);
-  margin: 3px 5px 0 5px;
+  margin: 9px 5px 0 5px;
   display: inline-block;
   transform: translate(0px, -5px);
 }
@@ -265,17 +270,17 @@ gp-button {
 .goldplay__volume-bar {
 }
 .goldplay__volume-bar--handle {
-  height: 100px;
-  width: 20px;
-  margin: -122px 0 0 0;
+  height: 160px;
+  width: 40px;
+  margin: -182px 0 0 0;
   cursor: default;
 }
 .goldplay__volume-bar--column {
   background: var(--volumeBarColumnBgColor);
   width: 4px;
   top: 15px;
-  left: 8px;
-  height: 80px;
+  left: 20px;
+  height: 140px;
   position: absolute;
 }
 .goldplay__volume-bar--precent {
@@ -284,18 +289,18 @@ gp-button {
   width: 100%;
   text-align: center;
   color: var(--volumeBarPrecentColor);
-  font-size: 10px;
+  font-size: 16px;
   cursor: text;
 }
 .goldplay__volume-bar--size {
   background: var(--defaultBaseColor);
-  left: 8px;
+  left: 20px;
   z-index: 2;
   position: absolute;
 }
 .goldplay__volume-bar--rod {
   position: absolute;
-  left: 5px;
+  left: 17px;
   z-index: 3;
 }
 .goldplay__volume-bar--rod::before {

@@ -37,7 +37,8 @@ class Player extends BaseClass {
   componentsController = null;
   controlBar = false;
   controlBarController = null;
-  controlBarHeight = 50;
+  controlBarHeight = 100;
+  controlBarAutoHide = true;
   alertError = null;
   defaultAlert = true;
   dataController = null;

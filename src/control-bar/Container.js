@@ -67,7 +67,7 @@ class Container extends BaseComponent {
             this.hide()
           }
         }
-      }, 100)
+      }, 2000)
     }
   }
 

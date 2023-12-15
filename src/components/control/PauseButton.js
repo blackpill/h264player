@@ -22,7 +22,7 @@ import Template from '../../toolkit/Template'
 // </gp-button>`
 
 const PAUSE_ICON = Template.create`
-<svg style="display:${'pauseHide'}" class="goldplay__control--pausing" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20px" height="20px" viewBox="0 0 26 26" style="background:none" xml:space="preserve">
+<svg style="display:${'pauseHide'}" class="goldplay__control--pausing" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="40px" height="40px" viewBox="0 0 26 26" style="background:none" xml:space="preserve">
 <g>
 <path d="M2.667,0h6v26h-6V0z M15.333,0v26h6V0H15.333z" fill="#f1f1f1"/>
 </g>
@@ -30,7 +30,7 @@ const PAUSE_ICON = Template.create`
 `
 
 const PAUSE_LOADING_ICON = `
-<svg version="1.1" class="goldplay__control--pause-loading" style="display:\${'pauseLoadingHide'}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="25px" height="25px" viewBox="0 0 612 792" style="background:none;margin: -4px 0 0 -5px;" xml:space="preserve">
+<svg version="1.1" class="goldplay__control--pause-loading" style="display:\${'pauseLoadingHide'}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="50px" height="50px" viewBox="0 0 612 792" style="background:none;margin: -4px 0 0 -5px;" xml:space="preserve">
 <linearGradient id="goldplay-pause-loading-gradient" gradientUnits="userSpaceOnUse" x1="1.98" y1="784.6123" x2="26.2101" y2="770.623" gradientTransform="matrix(21.8571 0 0 21.8571 -2.0895 -16600.5293)">
     <stop offset="0.1682" style="stop-color:#f1f1f1;stop-opacity:0"></stop>
     <stop offset="0.7502" style="stop-color:#f1f1f1"></stop>
