@@ -354,7 +354,9 @@ class HLSLoader extends BaseLoader {
     })
     if(filteredPlaylists) {
       const maxBandwidthPlaylist = filteredPlaylists.reduce((acc, current) => {
-        if (acc.attributes.BANDWIDTH >= current.attributes.BANDWIDTH) {
+        if (this.player.options.maxBandwidth && current.attributes.BANDWIDTH > this.player.options.maxBandwidth) {
+          return acc
+        }else if (acc.attributes.BANDWIDTH >= current.attributes.BANDWIDTH) {
           return acc
         } else {
           return current

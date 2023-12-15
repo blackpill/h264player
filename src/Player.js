@@ -103,6 +103,7 @@ class Player extends BaseClass {
     this.options.sourceURL = this.options.sourceURL || this.options.source;
     this.options.streamList = this.options.streamList || [];
     this.options.events = getEvents();
+    this.options.maxBandwidth = this.options.maxBandwidth || 4*1024*1024;
     this.maxBufferLength =
       options.maxBufferLength !== undefined
         ? options.maxBufferLength
