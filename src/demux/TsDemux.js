@@ -137,12 +137,16 @@ class TsDemux {
     }
   }
   audioQueue(pes) {
-    this.audioArray.push(pes);
+    if (pes.data_byte) {
+      this.audioArray.push(pes);
+    }
   }
   videoQueue(pes) {
-    this.previousPes = pes;
-    this.maxVideoPTS = Math.max(this.maxVideoPTS, pes.PTS);
-    this.videoArray.push(pes);
+    if (pes.data_byte) {
+      this.previousPes = pes;
+      this.maxVideoPTS = Math.max(this.maxVideoPTS, pes.PTS);
+      this.videoArray.push(pes);
+    }
   }
   destroy() {
     this.demuxer.destroy();

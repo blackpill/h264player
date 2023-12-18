@@ -140,7 +140,7 @@ class LoadData extends BaseClass {
           this.loadAudioSegmentByNo(id);
         }
       }
-    }else if (segment.no < lastNo) {
+    }else if (segment.no < lastNo && segment.no <= this.options.player.currentIndex + 2) {
       this.loadSegmentByNo(segment.no + 1);
     }
   }
@@ -306,7 +306,9 @@ class LoadData extends BaseClass {
     if (typeof callback == "function") {
       if (buffer) {
         callback.call(this, buffer);
-        // this.removeBufferByNo(buffer.no);
+        if (buffer.no <= this.options.player.currentIndex) {
+          this.removeBufferByNo(buffer.no);
+        }
       }else{
         this.logger.error("getBlobByNo", "buffer null", "no:", no);
         if (fromStream) {
@@ -334,7 +336,9 @@ class LoadData extends BaseClass {
     if (typeof callback == "function") {
       if (audioBuffer) {
         callback.call(this, audioBuffer);
-        // this.removeAudioBufferByNo(audioBuffer.no);
+        if (audioBuffer.no <= this.options.player.currentIndex) {
+          this.removeAudioBufferByNo(audioBuffer.no);
+        }
       }else{
         this.logger.error("getBlobByNo", "buffer null", "no:", no);
         if (fromStream) {

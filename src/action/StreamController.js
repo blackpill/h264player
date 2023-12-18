@@ -303,7 +303,7 @@ export default class StreamController extends BaseClass {
       return;
     }
     let currentNo = Math.max.apply(Math, this.audioSegmentIdReceived)
-    if (data.audioOnly && (this.audioSegmentIdReceived.length === 0 || data.no === currentNo + 1)) {
+    if (false && data.audioOnly && (this.audioSegmentIdReceived.length === 0 || data.no === currentNo + 1)) {
       // let msPerFrame = this.imagePlayer.imageData.fps ? 1000 / this.imagePlayer.imageData.fps : 33
       let msPerFrame = 33
       let audioData = {
@@ -324,13 +324,13 @@ export default class StreamController extends BaseClass {
     }else if (
       data &&
       data.arrayBuffer &&
-      (data.no === this.currentIndex ||
+      (data.no >= this.currentIndex ||
         this.player.playbackRate > 1 ||
         this.player.options.type === "MP4")
     ) {
       this.retryTime = 0;
 
-      this.logger.warn("onRead", "get stream data", data.no);
+      this.logger.warn("onRead", "get stream data", data.no, "audioOnly = ", data.audioOnly);
       //start demux, get the video and audio
       if (data.no === this.tsNumber && !this.player.options.isLive) {
         //the last one ts packet

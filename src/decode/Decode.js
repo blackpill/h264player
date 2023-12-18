@@ -120,6 +120,7 @@ class Decode {
       }
     }
     if (partEnd) {
+      const hasVideo = this.yuvArray.length > 0
       if (this.yuvArray.length) {
         let start = Date.now();
         // console.log('getDecodeYUV', pts, start);
@@ -143,7 +144,7 @@ class Decode {
       }
       self.postMessage({
         type: "partEnd",
-        data: lastTS,
+        data: lastTS & hasVideo, //Only video end can flush decoder
         no: this.no
       });
     }
