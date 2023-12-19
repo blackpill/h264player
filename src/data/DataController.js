@@ -39,6 +39,9 @@ export class DataController extends BaseController {
   setLoadDataAudioSegmentPool(segmentPool) {
     this.loadData.setAudioSegmentPool(segmentPool);
   }
+  setLoadDataUseAACAudio(useAACAudio) {
+    this.loadData.setAudioUseAAC(useAACAudio);
+  }
 
   startLoad(startTime) {
     const type = this.options.player.options.type;

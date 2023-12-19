@@ -86,6 +86,7 @@ class LoaderController extends BaseController {
         return;
       }
       this.dataController.setLoadDataSourceData(this.exeLoader.getSourceData());
+      this.dataController.setLoadDataUseAACAudio(this.exeLoader.getUseAAC());
       this.dataController.setLoadDataAudioSegmentPool(
           this.exeLoader.getAudioSegmentPool()
       );

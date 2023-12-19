@@ -30,6 +30,7 @@ class HLSLoader extends BaseLoader {
   options = null;
   httpWorker = null;
   sourceData = null;
+  useAACAudio = false;
   // segmentPool should be immutability
   segmentPool = [
     /* new SegmentModel */
@@ -152,12 +153,16 @@ class HLSLoader extends BaseLoader {
           });
     } else {
       this.state = state.LOADING;
+      let connector = "?"
+      if(this.audioURL.indexOf("?") !== -1) {
+        connector = "&"
+      }
       this.httpWorker.postMessage({
         type: "invoke",
         fileType: "m3u8",
         method: "get",
         name: "playlist",
-        url: this.audioURL
+        url: this.audioURL + connector + "M3U8_TYPE=AUDIO"
       });
     }
     this.httpWorker.onmessage = (event) => {
@@ -190,9 +195,16 @@ class HLSLoader extends BaseLoader {
   }
   parseAudioPlaylist(source) {
     const parser = new Parser();
+    parser.addParser({
+      expression: /^#AUDIO-CODEC/,
+      customType: 'audioCodec'
+    });
     parser.push(source);
     parser.end();
     const manifest = parser.manifest;
+    if (manifest.custom && manifest.custom.audioCodec === "#AUDIO-CODEC:AAC"){
+      this.useAACAudio = true
+    }
     const filteredPlaylists = manifest.playlists?.filter((playlist) => {
       if (playlist.attributes.CODECS) {
         return playlist.attributes.CODECS.includes("avc")
@@ -528,7 +540,9 @@ class HLSLoader extends BaseLoader {
   getAudioSegmentPool() {
     return this.audioSegmentPool;
   }
-
+  getUseAAC() {
+    return this.useAACAudio;
+  }
   isNotFree(notice = "") {
     notice = "[" + notice + "]loader is not free. please wait.";
     if (this.state !== state.IDLE && this.state !== state.DONE) {

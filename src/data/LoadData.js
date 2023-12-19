@@ -24,6 +24,7 @@ class LoadData extends BaseClass {
     /* new SegmentModel */
   ];
   seperateAudio = false;
+  useAAC = false; //Some sites (eg. Youtube) use AAC audio segments instead of TS packets
   audioSegmentPool = [
     /* new SegmentModel */
   ];
@@ -140,7 +141,7 @@ class LoadData extends BaseClass {
           this.loadAudioSegmentByNo(id);
         }
       }
-    }else if (segment.no < lastNo && segment.no <= this.options.player.currentIndex + 2) {
+    }else if (segment.no < lastNo && segment.no <= this.options.player.currentIndex + 3) {
       this.loadSegmentByNo(segment.no + 1);
     }
   }
@@ -490,7 +491,9 @@ class LoadData extends BaseClass {
   setSegmentPool(segmentPool) {
     this.segmentPool = segmentPool;
   }
-
+  setAudioUseAAC(useAAC) {
+    this.useAAC = useAAC;
+  }
   setAudioSegmentPool(audioSegmentPool) {
     if (audioSegmentPool.length > 0) {
       this.seperateAudio = true
